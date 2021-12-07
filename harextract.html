@@ -1,5 +1,5 @@
 <!--
-    HARExtract 0.9
+    HARExtract 0.9.1
     Copyright (C) 2021, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
     HARExtract home page: https://www.github.com/JC3/harextract
 
@@ -50,6 +50,9 @@ table {
     border: 2px solid #444;
     border-collapse: collapse;
 }
+td {
+    font-size: 90%;
+}
 th, td {
     border: 1px solid #aaa;
     padding: 0.1em 1em;
@@ -57,13 +60,16 @@ th, td {
 th, .fileinfo td:first-child {
     background: #fec;
 }
+#skippedinfo th {
+    background: #fcc;
+}
 .fileinfo td:first-child {
     font-weight: bold;
 }
 .fileinfo td:first-child::after {
     content: ':';
 }
-.entryinfo td:nth-child(2), .entryinfo td:nth-child(5) {
+#entryinfo td:nth-child(1), #entryinfo td:nth-child(4) {
     text-align: right;
 }
 .legal {
@@ -145,6 +151,7 @@ function loadHARJSON (har) {
 
     // extract and parse interesting entries
     let harents = [];
+    let skipped = [];
     for ([id,ent] of har.log.entries.entries()) {
         let harent = { id: id };
         let fullpath = new URL(ent.request.url).pathname.split('/');
@@ -152,8 +159,14 @@ function loadHARJSON (har) {
         harent.type = ent.response.content.mimeType; 
         harent.size = ent.response.content.size;
         harent.pathcomps = fullpath; // .path string will be set below
-        if (!ent.response.content.text) {
-            console.log(`harextract: skipped ${harent.name} (${id}): no content in har`);
+        if (!ent.response.content.text)
+            harent.error = 'No content.';
+        else if (ent.response.content.encoding != 'base64')
+            harent.error = "Can't decode.";
+        if (harent.error) {
+            console.log(`harextract: skipped ${harent.name} (${id}): ${harent.error}`);
+            harent.path = harent.pathcomps.join('/');  // TODO: fix me! kludge to get paths into skipped.
+            skipped.push(harent);
         } else {
             harents.push(harent);
         }
@@ -177,14 +190,18 @@ function loadHARJSON (har) {
             ent.path = (ncommon < 0 ? '' : ent.pathcomps.slice(ncommon - 1).join('/'));
         }
     }
-    
-    harents.sort(function (a,b) {
+   
+    let entsort = function (a,b) {
         let p = strCompare(a.path, b.path);
         return (p != 0) ? p : strCompare(a.name, b.name);
-    });
+    }
+   
+    harents.sort(entsort);
+    skipped.sort(entsort);
     
     loaded.data = har.log.entries;
     loaded.entries = harents;
+    loaded.skipped = skipped;
 
     // ui stuff from here down
     
@@ -194,41 +211,59 @@ function loadHARJSON (har) {
     domSetText('fileinfo_npages', har.log.pages.length);
     domSetText('fileinfo_nentries', har.log.entries.length);
 
+    let makenamelink = function (ent) {
+        a = document.createElement("a");
+        let enc = har.log.entries[ent.id].response.content.encoding;
+        let data = har.log.entries[ent.id].response.content.text;
+        a.href = `data:${ent.type};${enc},${data}`;
+        a.target = '_blank';
+        a.download = ent.name;
+        a.innerText = ent.name;
+        return a;
+    }
+
+    populateTable('entryinfo', harents, [
+        { name:'ID',       value:(e)=>e.id    },
+        { name:'Filename', value:makenamelink },
+        { name:'Type',     value:(e)=>e.type  },
+        { name:'Size',     value:(e)=>e.size  },
+        { name:'Path',     value:(e)=>e.path  }
+    ]);
+    
+    populateTable('skippedinfo', skipped, [
+        { name:'ID',       value:(e)=>e.id    },
+        { name:'Error',    value:(e)=>e.error },
+        { name:'Filename', value:(e)=>e.name  },
+        { name:'Type',     value:(e)=>e.type  },
+        { name:'Size',     value:(e)=>e.size  },
+        { name:'Path',     value:(e)=>e.path  }
+    ]);
+
+    uiSetDocState(true);
+
+}
+function populateTable (tableid, items, fields) {
+
     let ebody;
     {
-        let etable = document.getElementById('entryinfo');
+        let etable = document.getElementById(tableid);
         etable.innerHtml = '';
         let header = etable.createTHead().insertRow();
-        domAppendTH(header);
-        domAppendTH(header).innerText = 'ID';
-        domAppendTH(header).innerText = 'Filename';
-        domAppendTH(header).innerText = 'Type';
-        domAppendTH(header).innerText = 'Size';
-        domAppendTH(header).innerText = 'Path';
+        for (field of fields)
+            domAppendTH(header).innerText = field.name;
         ebody = etable.createTBody();
     }
     
-    for (ent of harents) {
+    for (ent of items) {
         let erow = ebody.insertRow();
-        {
-            let actions = erow.insertCell();
-            let a = document.createElement("a");
-            let enc = har.log.entries[ent.id].response.content.encoding;
-            let data = har.log.entries[ent.id].response.content.text;
-            a.href = `data:${ent.type};${enc},${data}`;
-            a.target = '_blank';
-            a.download = ent.name;
-            a.innerText = 'Save';
-            actions.appendChild(a);
+        for (field of fields) {
+            let value = field.value(ent);
+            if (value instanceof Node)
+                erow.insertCell().appendChild(value);
+            else
+                erow.insertCell().innerText = value;
         }
-        erow.insertCell().innerText = ent.id;
-        erow.insertCell().innerText = ent.name;
-        erow.insertCell().innerText = ent.type;
-        erow.insertCell().innerText = ent.size;
-        erow.insertCell().innerText = ent.path;
     }
-
-    uiSetDocState(true);
 
 }
 function buildZIP (ents, data) {
@@ -302,7 +337,7 @@ function domAppendTH (header) {
 <body class="closed zipidle">
     <div class="section titlebar">
         <div>HAR Extractor</div>
-        <div>Version: 0.9 | <a href="https://www.github.com/JC3/harextract">Feedback</a></div>
+        <div>Version: 0.9.1 | <a href="https://www.github.com/JC3/harextract">Feedback</a></div>
     </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onchange="openHAR(this)" class="ifzipidle"></input>
@@ -337,6 +372,9 @@ function domAppendTH (header) {
     </div>
     <div class="section ifopen">
         <table class="entryinfo clearme" id="entryinfo"></table>
+    </div>
+    <div class="section ifopen">
+        <table class="entryinfo clearme" id="skippedinfo"></table>
     </div>
     <div class="section legal">
         <div>

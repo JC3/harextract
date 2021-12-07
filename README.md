@@ -15,10 +15,6 @@ file:
 
 It is extremely basic right now but may evolve over time.
 
-Note: Currently you'll find that not every file in the HAR is listed. This is because
-I made it skip files that don't actually have content, and files with unsupported 
-encoding schemes. The GUI for this may be improved some day, or not. 
-
 ## Bugs
 
 Probably a ton. Written quickly and only tested on Chrome for Windows. Report them on
