@@ -291,10 +291,33 @@ function buildZIP (ents, data) {
 function showZipProgress (m) {
     domSetText('zipprogress', m.percent.toFixed(0));
 }
+
+function base64toBlob(base64Data, contentType) {
+    contentType = contentType || '';
+    var sliceSize = 1024;
+    var byteCharacters = atob(base64Data);
+    var bytesLength = byteCharacters.length;
+    var slicesCount = Math.ceil(bytesLength / sliceSize);
+    var byteArrays = new Array(slicesCount);
+
+    for (var sliceIndex = 0; sliceIndex < slicesCount; ++sliceIndex) {
+        var begin = sliceIndex * sliceSize;
+        var end = Math.min(begin + sliceSize, bytesLength);
+
+        var bytes = new Array(end - begin);
+        for (var offset = begin, i = 0; offset < end; ++i, ++offset) {
+            bytes[i] = byteCharacters[offset].charCodeAt(0);
+        }
+        byteArrays[sliceIndex] = new Uint8Array(bytes);
+    }
+    return new Blob(byteArrays, { type: contentType });
+}
+
 function saveZIP () {
     try {
         if (!loaded.entries)
             throw new Error('No file loaded.');
+			/*
         uiSetZipState(true);
         if (!loaded.zip)
             loaded.zip = buildZIP(loaded.entries, loaded.data, 0);
@@ -317,6 +340,50 @@ function saveZIP () {
         }).finally(function () {
             uiSetZipState(false);
         });
+		*/
+		
+		let ents = loaded.entries;
+		
+		if (ents.length == 0)
+			throw new Error('There are no files to save.');
+			
+		for (ent of ents) {
+			let filepath = `${ent.path}/${ent.id}-${ent.name}`;
+			
+			console.log(`harextract: saving ${filepath} (${ent.id})...`);
+			
+			if (filepath.startsWith('/'))
+				filepath = filepath.substring(1);
+				
+			//domSetText('procinfo', data[ent.id].response.content.text);
+			//download(data[ent.id].response.content.text,filepath,{ base64: true });
+			//download('chupacabra','fine.name',{type: 'text/plain'});
+			let data = loaded.data[ent.id].response.content.text;
+			
+			domSetText('procinfo1', filepath);
+			domSetText('procinfo2', data);
+			
+			
+			//let blob = new Blob([data], {type: 'text/plain'});
+			let blob = base64toBlob(data, {type: 'text/plain'});
+			let purl = URL.createObjectURL(blob);
+			//window.open(purl);
+			let klu = document.createElement('a');
+			klu.href = purl;
+			klu.target = '_blank';
+			klu.download = `${filepath}`;
+			klu.innerText = klu.download;
+			klu.click();
+			klu.remove();
+			URL.revokeObjectURL(purl);
+		}
+		
+		
+		
+		
+		
+		
+		
     } catch (e) {
         uiSetZipState(false);
         alertError('saving ZIP', e);
@@ -338,6 +405,11 @@ function domAppendTH (header) {
     <div class="section titlebar">
         <div>HAR Extractor</div>
         <div>Version: 0.9.1b | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
+    </div>
+	<div class="section fileinfo">
+        <div>Information:</div>
+        <div><span id="procinfo1">xxx</span></div>
+		<div><span id="procinfo2">xxx</span></div>
     </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onchange="openHAR(this)" class="ifzipidle"></input>
