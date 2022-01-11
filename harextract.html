@@ -1,6 +1,8 @@
 <!--
-    HARExtract 0.9.1b
-    Copyright (C) 2021, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
+    HARExtract 0.9.1b FORKED by flying catz
+	This piece of art was upgraded to download pictures from scribd.com via HAR
+	
+    All glory to Jason Cipriani <jason.cipriani.dev ~ gmail.com>
     HARExtract home page: https://www.github.com/JC3/harextract
 
     This program is free software: you can redistribute it and/or modify
@@ -266,6 +268,15 @@ function populateTable (tableid, items, fields) {
     }
 
 }
+
+function isBase64(str) {
+    try {
+        return btoa(atob(str)) == str;
+    } catch (err) {
+        return false;
+    }
+}
+
 function buildZIP (ents, data) {
     if (ents.length == 0)
         throw new Error('There are no files to save.');
@@ -274,13 +285,26 @@ function buildZIP (ents, data) {
     for (ent of ents) {
         console.log(`harextract: adding ${ent.name} (${ent.id})...`);
         try {
-            let filepath = `${ent.path}/${ent.name}`;
+			let id000 = "";
+			id000 = id000.concat(ent.id);
+			if (id000.length == 1) {
+				id000 = `00${id000}`;
+			} else if (id000.length == 2) {
+				id000 = `0${id000}`;
+			} 
+            let filepath = `${ent.path}/${id000}-${ent.name}`;
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
             let encoding = data[ent.id].response.content.encoding;
             if (encoding != 'base64')
                 throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
-            zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+			if (!isBase64(data[ent.id].response.content.text)) {
+                console.log(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding} ==> save as is...`);
+				zip.file(filepath, data[ent.id].response.content.text, { base64: false });
+			}
+			else {
+				zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+			}
         } catch (e) {
             console.log(e);
         }
@@ -294,7 +318,7 @@ function showZipProgress (m) {
 
 function base64toBlob(base64Data, contentType) {
     contentType = contentType || '';
-    var sliceSize = 1024;
+    var sliceSize = 128;
     var byteCharacters = atob(base64Data);
     var bytesLength = byteCharacters.length;
     var slicesCount = Math.ceil(bytesLength / sliceSize);
@@ -317,7 +341,7 @@ function saveZIP () {
     try {
         if (!loaded.entries)
             throw new Error('No file loaded.');
-			/*
+
         uiSetZipState(true);
         if (!loaded.zip)
             loaded.zip = buildZIP(loaded.entries, loaded.data, 0);
@@ -328,7 +352,6 @@ function saveZIP () {
             compressionOptions: { level: comp }
         }, showZipProgress).then(function(zipblob) {
             let zipurl = URL.createObjectURL(zipblob);
-            //window.open(loaded.zipurl);
             let kludge = document.createElement('a');
             kludge.href = zipurl;
             kludge.target = '_blank';
@@ -340,7 +363,21 @@ function saveZIP () {
         }).finally(function () {
             uiSetZipState(false);
         });
-		*/
+    } catch (e) {
+        uiSetZipState(false);
+        alertError('saving ZIP', e);
+    }    
+}
+
+function saveIndividual () {
+	var sleep = function (ms) {
+	  let now = Date.now(), end = now + ms;
+	  while (now < end) { now = Date.now(); }
+	};
+
+    try {
+        if (!loaded.entries)
+            throw new Error('No file loaded.');
 		
 		let ents = loaded.entries;
 		
@@ -348,26 +385,37 @@ function saveZIP () {
 			throw new Error('There are no files to save.');
 			
 		for (ent of ents) {
-			let filepath = `${ent.path}/${ent.id}-${ent.name}`;
+			let id000 = "";
+			id000 = id000.concat(ent.id);
+			if (id000.length == 1) {
+				id000 = `00${id000}`;
+			} else if (id000.length == 2) {
+				id000 = `0${id000}`;
+			} 
+
+			let filepath = `${ent.path}/${id000}-${ent.name}`;
 			
 			console.log(`harextract: saving ${filepath} (${ent.id})...`);
 			
 			if (filepath.startsWith('/'))
 				filepath = filepath.substring(1);
-				
-			//domSetText('procinfo', data[ent.id].response.content.text);
-			//download(data[ent.id].response.content.text,filepath,{ base64: true });
-			//download('chupacabra','fine.name',{type: 'text/plain'});
-			let data = loaded.data[ent.id].response.content.text;
-			
+
 			domSetText('procinfo1', filepath);
-			domSetText('procinfo2', data);
+			//domSetText('procinfo2', data);
 			
+			let data = loaded.data[ent.id].response.content.text;
+			let encoding = loaded.data[ent.id].response.content.encoding
 			
-			//let blob = new Blob([data], {type: 'text/plain'});
-			let blob = base64toBlob(data, {type: 'text/plain'});
+			let blob;
+            if (!isBase64(data)) {
+                console.log(`Unsupported encoding for ${filepath} (${ent.id}): ${encoding} ==> save as is...`);
+				blob = new Blob([data], {type: 'text/plain'});
+			}
+			else {
+				blob = base64toBlob(data, {type: 'text/plain'});
+			}
+				
 			let purl = URL.createObjectURL(blob);
-			//window.open(purl);
 			let klu = document.createElement('a');
 			klu.href = purl;
 			klu.target = '_blank';
@@ -376,14 +424,9 @@ function saveZIP () {
 			klu.click();
 			klu.remove();
 			URL.revokeObjectURL(purl);
+			
+			sleep(500);
 		}
-		
-		
-		
-		
-		
-		
-		
     } catch (e) {
         uiSetZipState(false);
         alertError('saving ZIP', e);
@@ -404,12 +447,12 @@ function domAppendTH (header) {
 <body class="closed zipidle">
     <div class="section titlebar">
         <div>HAR Extractor</div>
-        <div>Version: 0.9.1b | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
+        <div>Version: 0.9.1b FORKED by flying catz | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
     </div>
 	<div class="section fileinfo">
         <div>Information:</div>
-        <div><span id="procinfo1">xxx</span></div>
-		<div><span id="procinfo2">xxx</span></div>
+        <div><span id="procinfo1">This piece of art was upgraded to download pictures from scribd.com via HAR.</span></div>
+		<div><span id="procinfo2">File name will contain ID-* to keep correct file sequence.</span></div>
     </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onchange="openHAR(this)" class="ifzipidle"></input>
@@ -439,6 +482,7 @@ function domAppendTH (header) {
                 <option value="9">9 - Best</option>
             </select>
             <a href="javascript:saveZIP()" id="savezip">Save ZIP</a>
+			<a href="javascript:saveIndividual()" id="savezip">Save individual files</a>
         </span>
         <span class="ifzipbusy">Please wait... <span id="zipprogress">0</span>%</span>
     </div>

@@ -2,6 +2,10 @@
 
 Browser-based HAR extraction tool.
 
+FORKED by flying catz.
+This piece of art was upgraded to download pictures from scribd.com via HAR.
+File name will contain ID-* to keep correct file sequence.
+
 All you need is harextract.html -- it's completely self-contained and doesn't require
 any online resources.
 
