@@ -31,7 +31,8 @@
 .open .ifclosed { display: none; }
 .zipidle .ifzipbusy { display: none; }
 .zipbusy .ifzipidle { display: none; }
-:root, input {
+.invisible { display: none; }
+:root, input, button, select {
     font-family: Tahoma,Helvetica,Arial,sans-serif;
     font-size: medium;
 }
@@ -126,6 +127,10 @@ function clearUI () {
 function strCompare (a, b) {
     return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
 }
+function loadFailed (e) {
+    clearUI();
+    alertError('loading file', e);
+}
 function openHAR (input) {
     clearUI();
     if (!input.files || !input.files.length) {
@@ -135,7 +140,7 @@ function openHAR (input) {
         domSetText('harfilename', loaded.filename);
         let reader = new FileReader();
         reader.onload = (e) => loadHARText(e.target.result);
-        reader.onerror = (e) => alert(`Error: ${e.error}`);
+        reader.onerror = (e) => loadFailed(reader.error);
         reader.readAsText(input.files[0]);
     }
 }
@@ -143,8 +148,7 @@ function loadHARText (text) {
     try {
         loadHARJSON(JSON.parse(text));
     } catch (e) {
-        clearUI();
-        alertError('loading file', e);
+        loadFailed(e);
     }
 }
 function loadHARJSON (har) {
@@ -326,8 +330,10 @@ function domAppendTH (header) {
         <div>Version: 0.9.2-pre1 | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
     </div>
     <div class="section">
-        <input type="file" accept=".har,application/json" onchange="openHAR(this)" class="ifzipidle"></input>
-        <span class="ifzipbusy clearme" id="harfilename"></span>
+        <input type="file" accept=".har,application/json" onclick="this.value=null" onchange="openHAR(this)" class="invisible" id="harfileinput"></input>
+        <label class="ifzipidle" for="harfileinput"><button onclick="this.parentElement.click()">Choose File...</button></label>
+        <label class="ifzipbusy"><button disabled>Choose File...</button><!-- hack to "disable" button without having to code stuff --></label>
+        <span class="clearme" id="harfilename"></span>
     </div>
     <div class="section ifopen">
         <table class="fileinfo">
