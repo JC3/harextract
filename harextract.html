@@ -121,7 +121,7 @@ function clearUI () {
     loaded = {};
     uiSetDocState(false);
     uiSetZipState(false);
-    document.querySelectorAll(".clearme").forEach((el) => el.innerHtml = '');
+    document.querySelectorAll(".clearme").forEach((el) => el.innerHTML = '');
 }
 function strCompare (a, b) {
     return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
@@ -233,7 +233,7 @@ function populateTable (tableid, items, fields) {
     let ebody;
     {
         let etable = document.getElementById(tableid);
-        etable.innerHtml = '';
+        etable.innerHTML = '';
         let header = etable.createTHead().insertRow();
         for (field of fields)
             domAppendTH(header).innerText = field.name;
