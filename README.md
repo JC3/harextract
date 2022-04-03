@@ -22,7 +22,7 @@ the issues page.
 
 ## License
 
-    Copyright (C) 2021, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
+    Copyright (C) 2021-2022, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
     HARExtract home page: https://www.github.com/JC3/harextract
 
     This program is free software: you can redistribute it and/or modify
