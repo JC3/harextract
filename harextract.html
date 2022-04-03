@@ -152,6 +152,7 @@ function loadHARJSON (har) {
     // extract and parse interesting entries
     let harents = [];
     let skipped = [];
+    let commonpath = null;
     for ([id,ent] of har.log.entries.entries()) {
         let harent = { id: id };
         let fullpath = new URL(ent.request.url).pathname.split('/');
@@ -165,32 +166,17 @@ function loadHARJSON (har) {
             harent.error = "Can't decode.";
         if (harent.error) {
             console.log(`harextract: skipped ${harent.name} (${id}): ${harent.error}`);
-            harent.path = harent.pathcomps.join('/');  // TODO: fix me! kludge to get paths into skipped.
             skipped.push(harent);
         } else {
-            harents.push(harent);
+            commonpath = fullpath.slice(0, [...fullpath,null].findIndex((p, n) => p !== (commonpath||fullpath)[n])); // ;)
+            harents.push(harent); // note: we can now guarantee that if harents has items, commonpath is set.
         }
     }
     
-    // now make a few passes to strip common path prefixes
-    // todo: code can be simplified by maintaining common components above then
-    // doing a single second pass to slice + join.
-    if (harents.length > 0) {
-        for (var ncommon = 0, allsame = true; allsame && ncommon < harents[0].pathcomps.length; ++ ncommon) {
-            allsame = true;
-            let refpart = harents[0].pathcomps[ncommon];
-            for (ent of harents) {
-                if (ent.pathcomps[ncommon] != refpart) {
-                    allsame = false;
-                    break;
-                }
-            }
-        }
-        for (ent of harents) {
-            ent.path = (ncommon < 0 ? '' : ent.pathcomps.slice(ncommon - 1).join('/'));
-        }
-    }
-   
+    // set path strings for all files; for non-skipped files, also strip common path prefixes.
+    harents.forEach(ent => ent.path = ent.pathcomps.slice(commonpath.length).join('/'));
+    skipped.forEach(ent => ent.path = ent.pathcomps.join('/'));
+       
     let entsort = function (a,b) {
         let p = strCompare(a.path, b.path);
         return (p != 0) ? p : strCompare(a.name, b.name);
