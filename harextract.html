@@ -325,7 +325,7 @@ function saveZIP () {
 }
 function doUpdateCheck () {
     try {
-        fetch('https://api.github.com/repos/JC3/harextract/releases/latest')
+        fetch('https://api.github.com/repos/JC3/harextract/releases/latest', { cache: 'no-cache' })
             .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`)))
             .then(handleUpdateCheck)
             .catch(e => console.log(`harextract: Could not check for updates: ${e.message}`));
@@ -335,7 +335,7 @@ function doUpdateCheck () {
 }
 function handleUpdateCheck (info) {
     if (info.draft === false && info.prerelease === false && info.html_url) {
-        let makever = v => v.match(/[^.0-9]*([.0-9]+)/)[1].split('.').map(s => parseInt(s));
+        let makever = v => v.match(/[^.0-9]*([.0-9]+)/)[1].split('.').map(parseInt);
         if (makever(info.tag_name) > makever(HAREXTRACT_VERSION)) {
             document.body.classList.add('newrelease');
             document.getElementById('updatelink').href = info.html_url
