@@ -26,13 +26,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>const HAREXTRACT_VERSION = '0.9.2-pre1';</script> <!-- KEEP THIS UPDATED! -->
 <title>HAR Extractor</title>
 <style>
 .closed .ifopen { display: none; }
 .open .ifclosed { display: none; }
 .zipidle .ifzipbusy { display: none; }
 .zipbusy .ifzipidle { display: none; }
-.invisible { display: none; }
+.invisible, .ifnewrelease { display: none; }
+.newrelease .ifnewrelease { display: initial; }
 :root, input, button, select {
     font-family: Tahoma,Helvetica,Arial,sans-serif;
     font-size: medium;
@@ -98,6 +100,14 @@ th, .fileinfo td:first-child {
     right: 1em;
     top: 50%;
     transform: translate(0, -50%);
+}
+#updatelink {
+    font-size: 85%;
+    padding: 0.5em;
+    background: yellow;
+    color: black;
+    border: 1px solid black;
+    border-radius: 3px;
 }
 </style>
 <script>
@@ -313,6 +323,26 @@ function saveZIP () {
         alertError('saving ZIP', e);
     }    
 }
+function doUpdateCheck () {
+    try {
+        fetch('https://api.github.com/repos/JC3/harextract/releases/latest')
+            .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`)))
+            .then(handleUpdateCheck)
+            .catch(e => console.log(`harextract: Could not check for updates: ${e.message}`));
+    } catch (e) {
+        console.log(`harextract: Could not check for updates: ${e.message}`);
+    }
+}
+function handleUpdateCheck (info) {
+    if (info.draft === false && info.prerelease === false && info.html_url) {
+        let makever = v => v.match(/[^.0-9]*([.0-9]+)/)[1].split('.').map(s => parseInt(s));
+        if (makever(info.tag_name) > makever(HAREXTRACT_VERSION)) {
+            document.body.classList.add('newrelease');
+            document.getElementById('updatelink').href = info.html_url
+            document.getElementById('updatelink').title = `New Version: ${info.name}`;
+        }
+    }
+}
 // i'd really like this to stay self-contained and offline, so i'm rolling my own
 // dom utility functions instead of using e.g. jquery.
 function domSetText (id, text) {
@@ -323,12 +353,14 @@ function domAppendTH (header) {
     let th = document.createElement('th');
     return header.appendChild(th);
 }
+document.addEventListener('DOMContentLoaded', () => document.getElementById('version').innerText = HAREXTRACT_VERSION);
+document.addEventListener('DOMContentLoaded', doUpdateCheck);
 </script>
 </head>
 <body class="closed zipidle">
     <div class="section titlebar">
         <div>HAR Extractor</div>
-        <div>Version: 0.9.2-pre1 | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
+        <div><span class="ifnewrelease"><a id="updatelink" href="">Update Available!</a> | </span> Version: <span id="version"></span> | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
     </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onclick="this.value=null" onchange="openHAR(this)" class="invisible" id="harfileinput">
