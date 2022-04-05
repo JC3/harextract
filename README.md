@@ -2,10 +2,6 @@
 
 Browser-based HAR extraction tool.
 
-FORKED by flying catz.
-This piece of art was upgraded to download pictures from scribd.com via HAR.
-File name will contain ID-* to keep correct file sequence.
-
 All you need is harextract.html -- it's completely self-contained and doesn't require
 any online resources.
 
@@ -24,9 +20,15 @@ It is extremely basic right now but may evolve over time.
 Probably a ton. Written quickly and only tested on Chrome for Windows. Report them on
 the issues page.
 
+## Contributors
+
+Thank you!!
+
+- Flying Catz - https://github.com/catzcod
+
 ## License
 
-    Copyright (C) 2021, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
+    Copyright (C) 2021-2022, Jason Cipriani <jason.cipriani.dev ~ gmail.com>
     HARExtract home page: https://www.github.com/JC3/harextract
 
     This program is free software: you can redistribute it and/or modify
