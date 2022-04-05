@@ -79,6 +79,17 @@ th, .fileinfo td:first-child {
 #entryinfo td:nth-child(1), #entryinfo td:nth-child(4) {
     text-align: right;
 }
+.actions, .actions > div {
+    display: inline-flex;
+    gap: 1ex;
+}
+.actions > div {
+    align-items: center;
+    padding: 0.25em 1ex;
+    border: 1px solid black;
+    border-radius: 3px;
+    background: #fbfbfb;
+}
 .legal {
     font-size: 75%;
     color: #888;
@@ -345,7 +356,7 @@ function saveZIP () {
             throw new Error('No file loaded.');
         uiSetZipState(true);
         if (!loaded.zip)
-            loaded.zip = buildZIP(loaded.entries, loaded.data, 0);
+            loaded.zip = buildZIP(loaded.entries, loaded.data);
         let comp = parseInt(document.getElementById('compression').value);
         loaded.zip.generateAsync({
             type: 'blob',
@@ -401,7 +412,8 @@ function saveIndividual () {
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
 
-            domSetText('procinfo1', filepath);
+            // todo: reimplement progress indicator somewhere
+            //domSetText('procinfo1', filepath);
             //domSetText('procinfo2', data);
             
             let data = loaded.data[ent.id].response.content.text;
@@ -472,11 +484,6 @@ document.addEventListener('DOMContentLoaded', doUpdateCheck);
         <div>HAR Extractor</div>
         <div><span class="ifnewrelease"><a id="updatelink" href="">Update Available!</a> | </span> Version: <span id="version"></span> | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
     </div>
-    <div class="section fileinfo">
-        <div>Information:</div>
-        <div><span id="procinfo1">This piece of art was upgraded to download pictures from scribd.com via HAR.</span></div>
-        <div><span id="procinfo2">File name will contain ID-* to keep correct file sequence.</span></div>
-    </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onclick="this.value=null" onchange="openHAR(this)" class="invisible" id="harfileinput">
         <label class="ifzipidle" for="harfileinput"><button onclick="this.parentElement.click()">Choose File...</button></label>
@@ -493,21 +500,25 @@ document.addEventListener('DOMContentLoaded', doUpdateCheck);
         </table>
     </div>
     <div class="section ifopen">
-        <span class="ifzipidle">
-            <select id="compression">
-                <option value="0">None - Fastest</option>
-                <option value="1">1 - Fast</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5" selected>5 - Normal</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9 - Best</option>
-            </select>
-            <a href="javascript:saveZIP()" id="savezip">Save ZIP</a>
-            <a href="javascript:saveIndividual()" id="savezip">Save individual files</a>
+        <span class="actions ifzipidle">
+            <div>
+                <select id="compression" title="ZIP compression level">
+                    <option value="0">None - Fastest</option>
+                    <option value="1">1 - Fast</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5" selected>5 - Normal</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9 - Best</option>
+                </select>
+                <a href="javascript:saveZIP()">Save ZIP</a>
+            </div>
+            <div>
+                <a href="javascript:saveIndividual()">Save All</a>
+            </div>
         </span>
         <span class="ifzipbusy">Please wait... <span id="zipprogress">0</span>%</span>
     </div>
