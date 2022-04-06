@@ -287,26 +287,26 @@ function buildZIP (ents, data) {
     for (ent of ents) {
         console.log(`harextract: adding ${ent.name} (${ent.id})...`);
         try {
-			let id000 = "";
-			id000 = id000.concat(ent.id);
-			if (id000.length == 1) {
-				id000 = `00${id000}`;
-			} else if (id000.length == 2) {
-				id000 = `0${id000}`;
-			} 
+            let id000 = "";
+            id000 = id000.concat(ent.id);
+            if (id000.length == 1) {
+                id000 = `00${id000}`;
+            } else if (id000.length == 2) {
+                id000 = `0${id000}`;
+            } 
             let filepath = `${ent.path}/${id000}-${ent.name}`;
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
             let encoding = data[ent.id].response.content.encoding;
             if (encoding != 'base64')
                 throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
-			if (!isBase64(data[ent.id].response.content.text)) {
+            if (!isBase64(data[ent.id].response.content.text)) {
                 console.log(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding} ==> save as is...`);
-				zip.file(filepath, data[ent.id].response.content.text, { base64: false });
-			}
-			else {
-				zip.file(filepath, data[ent.id].response.content.text, { base64: true });
-			}
+                zip.file(filepath, data[ent.id].response.content.text, { base64: false });
+            }
+            else {
+                zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+            }
         } catch (e) {
             console.log(e);
         }
@@ -371,63 +371,63 @@ function saveZIP () {
 }
 
 function saveIndividual () {
-	var sleep = function (ms) {
-	  let now = Date.now(), end = now + ms;
-	  while (now < end) { now = Date.now(); }
-	};
+    var sleep = function (ms) {
+      let now = Date.now(), end = now + ms;
+      while (now < end) { now = Date.now(); }
+    };
 
     try {
         if (!loaded.entries)
             throw new Error('No file loaded.');
-		
-		let ents = loaded.entries;
-		
-		if (ents.length == 0)
-			throw new Error('There are no files to save.');
-			
-		for (ent of ents) {
-			let id000 = "";
-			id000 = id000.concat(ent.id);
-			if (id000.length == 1) {
-				id000 = `00${id000}`;
-			} else if (id000.length == 2) {
-				id000 = `0${id000}`;
-			} 
+        
+        let ents = loaded.entries;
+        
+        if (ents.length == 0)
+            throw new Error('There are no files to save.');
+            
+        for (ent of ents) {
+            let id000 = "";
+            id000 = id000.concat(ent.id);
+            if (id000.length == 1) {
+                id000 = `00${id000}`;
+            } else if (id000.length == 2) {
+                id000 = `0${id000}`;
+            } 
 
-			let filepath = `${ent.path}/${id000}-${ent.name}`;
-			
-			console.log(`harextract: saving ${filepath} (${ent.id})...`);
-			
-			if (filepath.startsWith('/'))
-				filepath = filepath.substring(1);
+            let filepath = `${ent.path}/${id000}-${ent.name}`;
+            
+            console.log(`harextract: saving ${filepath} (${ent.id})...`);
+            
+            if (filepath.startsWith('/'))
+                filepath = filepath.substring(1);
 
-			domSetText('procinfo1', filepath);
-			//domSetText('procinfo2', data);
-			
-			let data = loaded.data[ent.id].response.content.text;
-			let encoding = loaded.data[ent.id].response.content.encoding
-			
-			let blob;
+            domSetText('procinfo1', filepath);
+            //domSetText('procinfo2', data);
+            
+            let data = loaded.data[ent.id].response.content.text;
+            let encoding = loaded.data[ent.id].response.content.encoding
+            
+            let blob;
             if (!isBase64(data)) {
                 console.log(`Unsupported encoding for ${filepath} (${ent.id}): ${encoding} ==> save as is...`);
-				blob = new Blob([data], {type: 'text/plain'});
-			}
-			else {
-				blob = base64toBlob(data, {type: 'text/plain'});
-			}
-				
-			let purl = URL.createObjectURL(blob);
-			let klu = document.createElement('a');
-			klu.href = purl;
-			klu.target = '_blank';
-			klu.download = `${filepath}`;
-			klu.innerText = klu.download;
-			klu.click();
-			klu.remove();
-			URL.revokeObjectURL(purl);
-			
-			sleep(500);
-		}
+                blob = new Blob([data], {type: 'text/plain'});
+            }
+            else {
+                blob = base64toBlob(data, {type: 'text/plain'});
+            }
+                
+            let purl = URL.createObjectURL(blob);
+            let klu = document.createElement('a');
+            klu.href = purl;
+            klu.target = '_blank';
+            klu.download = `${filepath}`;
+            klu.innerText = klu.download;
+            klu.click();
+            klu.remove();
+            URL.revokeObjectURL(purl);
+            
+            sleep(500);
+        }
     } catch (e) {
         uiSetZipState(false);
         alertError('saving ZIP', e);
@@ -472,10 +472,10 @@ document.addEventListener('DOMContentLoaded', doUpdateCheck);
         <div>HAR Extractor</div>
         <div><span class="ifnewrelease"><a id="updatelink" href="">Update Available!</a> | </span> Version: <span id="version"></span> | <a href="https://www.github.com/JC3/harextract/issues">Feedback</a></div>
     </div>
-	<div class="section fileinfo">
+    <div class="section fileinfo">
         <div>Information:</div>
         <div><span id="procinfo1">This piece of art was upgraded to download pictures from scribd.com via HAR.</span></div>
-		<div><span id="procinfo2">File name will contain ID-* to keep correct file sequence.</span></div>
+        <div><span id="procinfo2">File name will contain ID-* to keep correct file sequence.</span></div>
     </div>
     <div class="section">
         <input type="file" accept=".har,application/json" onclick="this.value=null" onchange="openHAR(this)" class="invisible" id="harfileinput">
@@ -507,7 +507,7 @@ document.addEventListener('DOMContentLoaded', doUpdateCheck);
                 <option value="9">9 - Best</option>
             </select>
             <a href="javascript:saveZIP()" id="savezip">Save ZIP</a>
-			<a href="javascript:saveIndividual()" id="savezip">Save individual files</a>
+            <a href="javascript:saveIndividual()" id="savezip">Save individual files</a>
         </span>
         <span class="ifzipbusy">Please wait... <span id="zipprogress">0</span>%</span>
     </div>
