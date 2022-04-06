@@ -176,6 +176,10 @@ function loadHARText (text) {
         loadFailed(e);
     }
 }
+const ENCODINGS = {
+    'base64': { zipopts: { base64: true  }, uriencode: x => x             },
+    'utf-8':  { zipopts: { base64: false }, uriencode: encodeURIComponent }
+}
 function loadHARJSON (har) {
 
     // extract and parse interesting entries
@@ -188,11 +192,12 @@ function loadHARJSON (har) {
         harent.name = fullpath.pop();
         harent.type = ent.response.content.mimeType; 
         harent.size = ent.response.content.size;
+        harent.encoding = ent.response.content.encoding || 'utf-8';
         harent.pathcomps = fullpath; // .path string will be set below
-        if (!ent.response.content.text)
-            harent.error = 'No content.';
-        else if (ent.response.content.encoding != 'base64')
+        if (!ENCODINGS[harent.encoding])
             harent.error = "Can't decode.";
+        else if (!ent.response.content.text)
+            harent.error = 'No content.';
         if (harent.error) {
             console.log(`harextract: skipped ${harent.name} (${id}): ${harent.error}`);
             skipped.push(harent);
@@ -228,9 +233,9 @@ function loadHARJSON (har) {
 
     let makenamelink = function (ent) {
         a = document.createElement("a");
-        let enc = har.log.entries[ent.id].response.content.encoding;
+        let enc = ENCODINGS[ent.encoding];
         let data = har.log.entries[ent.id].response.content.text;
-        a.href = `data:${ent.type};${enc},${data}`;
+        a.href = `data:${ent.type};${ent.encoding},${ENCODINGS[ent.encoding].uriencode(data)}`;
         a.target = '_blank';
         a.download = ent.name;
         a.innerText = ent.name;
@@ -308,16 +313,7 @@ function buildZIP (ents, data) {
             let filepath = `${ent.path}/${id000}-${ent.name}`;
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
-            let encoding = data[ent.id].response.content.encoding;
-            if (encoding != 'base64')
-                throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
-            if (!isBase64(data[ent.id].response.content.text)) {
-                console.log(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding} ==> save as is...`);
-                zip.file(filepath, data[ent.id].response.content.text, { base64: false });
-            }
-            else {
-                zip.file(filepath, data[ent.id].response.content.text, { base64: true });
-            }
+            zip.file(filepath, data[ent.id].response.content.text, ENCODINGS[ent.encoding].zipopts);
         } catch (e) {
             console.log(e);
         }
@@ -417,7 +413,7 @@ function saveIndividual () {
             //domSetText('procinfo2', data);
             
             let data = loaded.data[ent.id].response.content.text;
-            let encoding = loaded.data[ent.id].response.content.encoding
+            let encoding = ent.encoding
             
             let blob;
             if (!isBase64(data)) {
