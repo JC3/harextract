@@ -278,6 +278,7 @@ function buildZIP (ents, data) {
             let filepath = `${ent.path}/${ent.name}`;
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
+            filepath = filepath.replace(/\/\/+/g, '/');
             let encoding = data[ent.id].response.content.encoding;
             if (encoding != 'base64')
                 throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
