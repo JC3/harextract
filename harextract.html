@@ -177,8 +177,12 @@ function loadHARJSON (har) {
         harent.pathcomps = fullpath; // .path string will be set below
         if (!ent.response.content.text)
             harent.error = 'No content.';
-        else if (ent.response.content.encoding != 'base64')
-            harent.error = "Can't decode.";
+		let cb64 = document.getElementById("checkBase64Only");
+		if (cb64 && cb64.checked) {
+			if (ent.response.content.encoding != 'base64')
+				harent.error = "Can't decode.";
+		}
+		if (harent.name == "") harent.name ="index.html"
         if (harent.error) {
             console.log(`harextract: skipped ${harent.name} (${id}): ${harent.error}`);
             skipped.push(harent);
@@ -278,10 +282,18 @@ function buildZIP (ents, data) {
             let filepath = `${ent.path}/${ent.name}`;
             if (filepath.startsWith('/'))
                 filepath = filepath.substring(1);
-            let encoding = data[ent.id].response.content.encoding;
-            if (encoding != 'base64')
-                throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
-            zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+            let encoding = data[ent.id].response.content.encoding;			
+			let cb64 = document.getElementById("checkBase64Only");
+			if (cb64 && cb64.checked) {
+				if (encoding != 'base64')
+					throw new Error(`Unsupported encoding for ${ent.name} (${ent.id}): ${encoding}`);
+				zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+			} else {
+				if (encoding != 'base64')
+					zip.file(filepath, data[ent.id].response.content.text, { base64: false });
+				else 
+					zip.file(filepath, data[ent.id].response.content.text, { base64: true });
+			}
         } catch (e) {
             console.log(e);
         }
@@ -297,7 +309,7 @@ function saveZIP () {
         if (!loaded.entries)
             throw new Error('No file loaded.');
         uiSetZipState(true);
-        if (!loaded.zip)
+        //if (!loaded.zip) // was ignoring zip base64 only checkbox changes
             loaded.zip = buildZIP(loaded.entries, loaded.data, 0);
         let comp = parseInt(document.getElementById('compression').value);
         loaded.zip.generateAsync({
@@ -367,6 +379,7 @@ document.addEventListener('DOMContentLoaded', doUpdateCheck);
         <label class="ifzipidle" for="harfileinput"><button onclick="this.parentElement.click()">Choose File...</button></label>
         <label class="ifzipbusy"><button disabled>Choose File...</button><!-- hack to "disable" button without having to code stuff --></label>
         <span class="clearme" id="harfilename"></span>
+		<input type="checkbox" id="checkBase64Only" name="checkBase64Only" unchecked><label for="checkBase64Only">zip base64 only</label>
     </div>
     <div class="section ifopen">
         <table class="fileinfo">
