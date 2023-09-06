@@ -183,6 +183,9 @@ function loadHARJSON (har) {
             console.log(`harextract: skipped ${harent.name} (${id}): ${harent.error}`);
             skipped.push(harent);
         } else {
+            if ('' == harent.name){
+				harent.name = 'unnamed file';
+			}
             commonpath = fullpath.slice(0, [...fullpath,null].findIndex((p, n) => p !== (commonpath||fullpath)[n])); // ;)
             harents.push(harent); // note: we can now guarantee that if harents has items, commonpath is set.
         }
