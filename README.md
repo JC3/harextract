@@ -2,6 +2,9 @@
 
 Browser-based HAR extraction tool.
 
+You can [use it online](https://jc3.github.io/harextract/harextract.html) if you don't
+want to download it.
+
 All you need is harextract.html -- it's completely self-contained and doesn't require
 any online resources.
 
